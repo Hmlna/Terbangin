@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:terbangin/home.dart';
-import 'package:terbangin/login.dart';
 import 'package:terbangin/login2.dart';
 
 class Splashscreen extends StatefulWidget {

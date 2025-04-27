@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:terbangin/main_page.dart';
 
 class Login2 extends StatelessWidget {
   const Login2({super.key});
@@ -156,7 +157,12 @@ class Login2 extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const MainPage()),
+                          );
+                        },
                         child: const Text("Log In"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF006BFF),
