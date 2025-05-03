@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:terbangin/splashscreen.dart';
-// import 'package:terbangin/home.dart';
-// import 'package:terbangin/login2.dart';
 
 void main() {
   runApp(const MyApp());

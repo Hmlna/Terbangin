@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:terbangin/login2.dart';
+import 'package:terbangin/login.dart';
 
 class Splashscreen extends StatefulWidget {
   const Splashscreen({super.key});
@@ -16,18 +16,16 @@ class _SplashscreenState extends State<Splashscreen> {
   void initState() {
     super.initState();
 
-    // Mulai fade-in
     Future.delayed(Duration(milliseconds: 100), () {
       setState(() {
         _opacity = 1.0;
       });
     });
 
-    // Navigasi ke Home setelah 2.5 detik
     Future.delayed(Duration(milliseconds: 2500), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Login2()),
+        MaterialPageRoute(builder: (context) => const Login()),
       );
     });
   }

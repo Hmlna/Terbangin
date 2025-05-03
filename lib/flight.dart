@@ -11,7 +11,6 @@ class Flight extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -227,7 +226,7 @@ class Flight extends StatelessWidget {
               Column(
                 children: [
                   Text(from, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text("Denpasar", style: const TextStyle(fontSize: 10)), // Opsional: Bisa juga diganti kalau ingin kota dinamis
+                  Text("Denpasar", style: const TextStyle(fontSize: 10)),
                 ],
               ),
               const Spacer(),
@@ -249,7 +248,7 @@ class Flight extends StatelessWidget {
               Column(
                 children: [
                   Text(to, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text("Jakarta", style: const TextStyle(fontSize: 10)), // Opsional juga
+                  Text("Jakarta", style: const TextStyle(fontSize: 10)),
                 ],
               ),
             ],

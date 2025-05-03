@@ -51,7 +51,6 @@ class TicketDetail extends StatelessWidget {
 
             const SizedBox(height: 50),
 
-            // Waktu dan lokasi
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -102,7 +101,6 @@ class TicketDetail extends StatelessWidget {
               ),
             ),
 
-            // Footer Harga + Button
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(

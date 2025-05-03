@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class ETicket extends StatelessWidget {
   final Map<String, dynamic> order;
 
-  const ETicket({Key? key, required this.order}) : super(key: key);
+  const ETicket({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {

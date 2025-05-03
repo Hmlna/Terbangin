@@ -39,7 +39,6 @@ class Payment extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Simulasikan pembayaran berhasil
                   showDialog(
                     context: context,
                     builder: (_) => AlertDialog(

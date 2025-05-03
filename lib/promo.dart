@@ -17,14 +17,14 @@ class Promo extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        automaticallyImplyLeading: false, // no back button
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 1,
         foregroundColor: Colors.black,
       ),
       body: ListView(
         children: const [
-          PromoBanner(gambar: 'sale-50'), // <-- panggil begini
+          PromoBanner(gambar: 'sale-50'),
           PromoBanner(gambar: 'sale-50'), 
           PromoBanner(gambar: 'sale-50'), 
           PromoBanner(gambar: 'sale-50'), 

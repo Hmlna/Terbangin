@@ -10,7 +10,6 @@ class Home extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background biru + SVG pesawat
           Container(
             height: 426,
             decoration: const BoxDecoration(
@@ -22,7 +21,6 @@ class Home extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          // Content
           SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

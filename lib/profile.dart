@@ -20,7 +20,6 @@ class _ProfileState extends State<Profile> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // Profile header
             Center(
               child: Text(
                 "Profile",
@@ -202,7 +201,6 @@ class _ProfileState extends State<Profile> {
                   ),
                   SizedBox(height: 4),
 
-                  // Lokasi
                   settingRow(
                     icon: Icons.location_on_outlined,
                     text: "Location",
@@ -229,7 +227,7 @@ class _ProfileState extends State<Profile> {
               ),
             ),
             SizedBox(height: 20),
-              // Container lainnya
+
             Container(
               width: MediaQuery.of(context).size.width * 0.95,
               decoration: BoxDecoration(
@@ -258,7 +256,6 @@ class _ProfileState extends State<Profile> {
                   ),
                   SizedBox(height: 20),
 
-                  // Pusat Bantuan
                   settingRow(
                     icon: Icons.help_outline,
                     text: "Help",
@@ -273,7 +270,6 @@ class _ProfileState extends State<Profile> {
                   ),
                   SizedBox(height: 16),
 
-                  // Tentang Terbangin
                   settingRow(
                     icon: Icons.info_outline,
                     text: "About",
@@ -287,7 +283,6 @@ class _ProfileState extends State<Profile> {
                   ),
                   SizedBox(height: 16),
 
-                  // Keluar
                   settingRow(
                     icon: Icons.logout,
                     text: "Logout",

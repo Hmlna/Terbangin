@@ -13,7 +13,7 @@ class FlightFacility extends StatelessWidget {
         automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.white,
-        title: const Text("Fasilitas Penerbangan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text("Flight Facilities", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -45,21 +45,21 @@ class FlightFacility extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          const Text("Tiket Sudah Termasuk", style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text("Ticket included", style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
-          const Text("Kabin: 7 kg\nBagasi: 20 kg",
+          const Text("Cabin: 7 kg\nBagage: 20 kg",
               style: TextStyle(fontSize: 14)),
           const SizedBox(height: 4),
           const Text(
-            "Pembelian bagasi tambahan tersedia di halaman pemesanan.\n*Ketersediaan tergantung pihak maskapai.",
+            "Availability depends on the airline.",
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
 
           const SizedBox(height: 16),
-          const Text("Tidak termasuk makanan", style: TextStyle(fontSize: 14)),
+          const Text("Foods not included", style: TextStyle(fontSize: 14)),
           const SizedBox(height: 4),
           const Text(
-            "Pembelian makanan tambahan tidak tersedia di halaman pemesanan.",
+            "Additional food purchases are not available on the ordering page.",
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
 
@@ -77,7 +77,7 @@ class FlightFacility extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(ticket['aircraftModel'] ?? 'Airbus A320'),
                 const Divider(),
-                const Text("Kelas", style: TextStyle(color: Colors.grey)),
+                const Text("Class", style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 4),
                 Text(ticket['class']),
               ],

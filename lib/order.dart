@@ -14,12 +14,12 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
   final List<Map<String, dynamic>> _activeOrders = [
     {
       'bookingId': '1239903782',
-      'price': 'Rp 2.306.500',
+      'price': 'IDR 2.306.500',
       'route': 'Lombok → Jakarta',
     },
     {
       'bookingId': '1236766403',
-      'price': 'Rp 1.476.269',
+      'price': 'IDR 1.476.269',
       'route': 'Jakarta → Lombok',
     },
   ];
