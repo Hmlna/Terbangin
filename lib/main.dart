@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:terbangin/splashscreen.dart';
+// import 'package:terbangin/home.dart';
+// import 'package:terbangin/login2.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,6 +21,12 @@ class MyApp extends StatelessWidget {
       ),
       home: const Splashscreen(),
       debugShowCheckedModeBanner: false,
+      // initialRoute: '/',
+      // routes: {
+      //   '/': (context) => const Splashscreen(),
+      //   '/home': (context) => const Home(),
+      //   '/login': (context) => Login2(),
+      // },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:svg_flutter/svg_flutter.dart';
+import 'package:terbangin/flight.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -146,15 +147,7 @@ class Home extends StatelessWidget {
                                           value: "Mar 19, 2025",
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildInputField(
-                                          context,
-                                          icon: Icons.date_range,
-                                          title: "Return",
-                                          value: "Mar 25, 2025",
-                                        ),
-                                      ),
+                                    
                                     ],
                                   ),
                                   const SizedBox(height: 12),
@@ -190,7 +183,12 @@ class Home extends StatelessWidget {
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                       ),
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const Flight()),
+                                          );
+                                      },
                                       child: const Text("Search Flight", style: TextStyle(color: Colors.white)
                                         )
                                       ),
@@ -241,7 +239,7 @@ class Home extends StatelessWidget {
   Widget _buildInputField(BuildContext context, {required IconData icon, required String title, required String value}) {
     return GestureDetector(
       onTap: () {
-        // nanti buka picker/select
+        
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
