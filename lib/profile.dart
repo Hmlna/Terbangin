@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:terbangin/edit_profile.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -13,8 +14,9 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFEFEFE), // optional for visibility
+      backgroundColor: Color(0xFFFEFEFE), 
       body: SafeArea(
+        child:SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
@@ -24,36 +26,35 @@ class _ProfileState extends State<Profile> {
                 "Profile",
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: 24, // Larger text size for the profile header
+                  fontSize: 24, 
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            SizedBox(height: 25),
             Divider(color: Colors.grey.shade400, thickness: 1),
             SizedBox(height: 25),
             Container(
+              width: MediaQuery.of(context).size.width * 0.95,
+              height: 89, 
               decoration: BoxDecoration(
                 color: Color(0xFF006BFF),
                 borderRadius: BorderRadius.circular(
                   5,
-                ), // Adjust the radius for the circular effect
+                ), 
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(
                       0.3,
-                    ), // Shadow color with opacity
+                    ),
                     offset: Offset(
                       0,
                       4,
-                    ), // Offset for the shadow (horizontal, vertical)
-                    blurRadius: 6, // Blur radius for the shadow
-                    spreadRadius: 2, // Spread radius for the shadow
+                    ), 
+                    blurRadius: 6, 
+                    spreadRadius: 2, 
                   ),
                 ],
               ),
-              width: 365, // Width of the box
-              height: 89, // Height of the box
               child: Row(
                 children: [
                   SizedBox(width: 25),
@@ -80,10 +81,9 @@ class _ProfileState extends State<Profile> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    // This will take up the remaining space in the Row
                     child: Column(
                       mainAxisAlignment:
-                          MainAxisAlignment.center, // Center text vertically
+                          MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
@@ -97,7 +97,10 @@ class _ProfileState extends State<Profile> {
                         SizedBox(height: 1),
                         TextButton(
                           onPressed: () {
-                            // Your action here
+                                Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const EditProfile()),
+                          );
                           },
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,
@@ -113,7 +116,7 @@ class _ProfileState extends State<Profile> {
                                 fontSize: 12,
                                 decoration: TextDecoration.underline,
                                 decorationColor:
-                                    Colors.white70, // 👈 underline color
+                                    Colors.white70, 
                               ),
                             ),
                           ),
@@ -138,13 +141,13 @@ class _ProfileState extends State<Profile> {
                   ),
                 ],
               ),
-              width: 365,
+              width: MediaQuery.of(context).size.width * 0.95,
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Pengaturan",
+                    "Setting",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -156,15 +159,15 @@ class _ProfileState extends State<Profile> {
                   // Bahasa
                   settingRow(
                     icon: Icons.language,
-                    text: "Bahasa",
+                    text: "Language",
 
                     trailing: Icon(
                       Icons.chevron_right,
                       color: Colors.grey.shade600,
                     ),
                     onTap: () {
-                      print("Bahasa tapped!");
-                      // Navigate or do something here
+                      print("Language tapped");
+                    
                     },
                   ),
                   SizedBox(height: 16),
@@ -172,15 +175,14 @@ class _ProfileState extends State<Profile> {
                   // Mata Uang
                   settingRow(
                     icon: Icons.attach_money,
-                    text: "Mata Uang",
+                    text: "Currency",
 
                     trailing: Icon(
                       Icons.chevron_right,
                       color: Colors.grey.shade600,
                     ),
                     onTap: () {
-                      print("Bahasa tapped!");
-                      // Navigate or do something here
+                      print("Currency tapped");
                     },
                   ),
                   SizedBox(height: 16),
@@ -188,15 +190,14 @@ class _ProfileState extends State<Profile> {
                   // Notifikasi
                   settingRow(
                     icon: Icons.notifications_none,
-                    text: "Notifikasi",
+                    text: "Notification",
 
                     trailing: Icon(
                       Icons.chevron_right,
                       color: Colors.grey.shade600,
                     ),
                     onTap: () {
-                      print("Bahasa tapped!");
-                      // Navigate or do something here
+                      print("Notification tapped");
                     },
                   ),
                   SizedBox(height: 4),
@@ -204,10 +205,10 @@ class _ProfileState extends State<Profile> {
                   // Lokasi
                   settingRow(
                     icon: Icons.location_on_outlined,
-                    text: "Lokasi",
+                    text: "Location",
 
                     trailing: Transform.scale(
-                      scale: 0.8, // 👈 adjust this to your desired size
+                      scale: 0.8, 
                       child: Switch(
                         value: isLocationEnabled,
                         onChanged: (val) {
@@ -215,12 +216,12 @@ class _ProfileState extends State<Profile> {
                             isLocationEnabled = val;
                           });
                         },
-                        activeColor: Color(0xFF006BFF), // Thumb color when ON
+                        activeColor: Color(0xFF006BFF), 
                         activeTrackColor:
-                            Colors.blue[200], // Track color when ON
-                        inactiveThumbColor: Colors.grey, // Thumb color when OFF
+                            Colors.blue[200], 
+                        inactiveThumbColor: Colors.grey, 
                         inactiveTrackColor:
-                            Colors.grey[300], // Track color when OFF
+                            Colors.grey[300], 
                       ),
                     ),
                   ),
@@ -228,7 +229,9 @@ class _ProfileState extends State<Profile> {
               ),
             ),
             SizedBox(height: 20),
+              // Container lainnya
             Container(
+              width: MediaQuery.of(context).size.width * 0.95,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(5),
@@ -241,13 +244,12 @@ class _ProfileState extends State<Profile> {
                   ),
                 ],
               ),
-              width: 365,
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Lainnya",
+                    "Other",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -259,15 +261,14 @@ class _ProfileState extends State<Profile> {
                   // Pusat Bantuan
                   settingRow(
                     icon: Icons.help_outline,
-                    text: "Pusat Bantuan",
+                    text: "Help",
 
                     trailing: Icon(
                       Icons.chevron_right,
                       color: Colors.grey.shade600,
                     ),
                     onTap: () {
-                      print("Bahasa tapped!");
-                      // Navigate or do something here
+                      print("Help tapped");
                     },
                   ),
                   SizedBox(height: 16),
@@ -275,14 +276,13 @@ class _ProfileState extends State<Profile> {
                   // Tentang Terbangin
                   settingRow(
                     icon: Icons.info_outline,
-                    text: "Tentang Terbangin",
+                    text: "About",
                     trailing: Icon(
                       Icons.chevron_right,
                       color: Colors.grey.shade600,
                     ),
                     onTap: () {
-                      print("Bahasa tapped!");
-                      // Navigate or do something here
+                      print("About tapped");
                     },
                   ),
                   SizedBox(height: 16),
@@ -290,14 +290,13 @@ class _ProfileState extends State<Profile> {
                   // Keluar
                   settingRow(
                     icon: Icons.logout,
-                    text: "Keluar",
+                    text: "Logout",
                     trailing: Icon(
                       Icons.chevron_right,
                       color: Colors.grey.shade600,
                     ),
                     onTap: () {
-                      print("Bahasa tapped!");
-                      // Navigate or do something here
+                      print("Logout tapped");
                     },
                   ),
                 ],
@@ -305,6 +304,7 @@ class _ProfileState extends State<Profile> {
             ),
           ],
         ),
+        )
       ),
     );
   }
@@ -314,7 +314,7 @@ Widget settingRow({
   required IconData icon,
   required String text,
   required Widget trailing,
-  VoidCallback? onTap, // <-- Add this
+  VoidCallback? onTap,
 }) {
   return InkWell(
     onTap: onTap,
