@@ -1,38 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terbangin/edit_profile.dart';
 import 'package:terbangin/login.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class User {
-  final int id;
-  final String name;
-  final String email;
-  final String? emailVerifiedAt;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+import 'package:terbangin/models/UserModel.dart';
+import 'package:terbangin/token_provider.dart';
+final baseUrl = 'http://10.0.2.2:8000/api'; // Sesuaikan API kamu
 
-  User({
-    required this.id,
-    required this.name,
-    required this.email,
-    this.emailVerifiedAt,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      emailVerifiedAt: json['email_verified_at'],
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
-    );
-  }
-}
 class Profile extends StatefulWidget {
   const Profile({super.key});
 
@@ -44,7 +21,7 @@ class _ProfileState extends State<Profile> {
   bool isLocationEnabled = false;
   bool isLoading = true;
   String? name;
-  String? token;
+  // String? token;
   User? user; // Ganti String? name jadi User? user
 
   @override
@@ -54,70 +31,88 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> loadTokenAndProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    token = prefs.getString('token');
-    if (token != null) {
-      await fetchProfile();
-    } else {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const Login()),
-        (route) => false,
-      );
-    }
+  final token = Provider.of<TokenProvider>(context, listen: false).token;
+  if (token != null && token.isNotEmpty) {
+    await fetchProfile(token);
+  } else {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const Login()),
+      (route) => false,
+    );
   }
+}
 
-  Future<void> fetchProfile() async {
-    setState(() {
-      isLoading = true;
-    });
-    final baseUrl = 'http://10.0.2.2:8000/api'; // Sesuaikan API kamu
-    final url = Uri.parse('$baseUrl/user');
-    try {
-      final response = await http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
+  Future<void> fetchProfile(String token) async {
+  setState(() {
+    isLoading = true;
+  });
+  final url = Uri.parse('$baseUrl/user');
+  try {
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        // Karena respons langsung user, tidak ada "success" dan "user" wrapper
-        setState(() {
-          user = User.fromJson(data);
-          isLoading = false;
-        });
-      } else if (response.statusCode == 401) {
-        logout();
-      } else {
-        setState(() {
-          user = null;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        user = User.fromJson(data);
+        isLoading = false;
+      });
+    } else if (response.statusCode == 401) {
+      logout(token);
+    } else {
       setState(() {
         user = null;
         isLoading = false;
       });
     }
+  } catch (e) {
+    setState(() {
+      user = null;
+      isLoading = false;
+    });
   }
+}
 
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const Login()),
-      (route) => false,
-    );
+
+  Future<void> logout(String token) async {
+  final url = Uri.parse('$baseUrl/logout');
+  try {
+    final response = await http.post(url, headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+
+    if (response.statusCode == 200) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('token');
+
+      // kosongkan juga dari provider
+      Provider.of<TokenProvider>(context, listen: false).setToken('');
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const Login()),
+      );
+    } else {
+      // showError('Logout gagal: ${response.statusCode}');
+    }
+  } catch (e) {
+    // showError('Terjadi kesalahan saat logout: $e');
   }
+}
 
   @override
   Widget build(BuildContext context) {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
     return Scaffold(
       backgroundColor: const Color(0xFFFEFEFE),
       body: SafeArea(
@@ -207,7 +202,10 @@ class _ProfileState extends State<Profile> {
                               );
                               // Kalau di edit profile ada perubahan, refresh profil
                               if (result == true) {
-                                await fetchProfile();
+                                  if (token != null) {
+                                    await fetchProfile(token); // OK
+                                  }
+                                // await fetchProfile(token);
                               }
                             },
                             style: TextButton.styleFrom(
@@ -383,7 +381,9 @@ class _ProfileState extends State<Profile> {
                         color: Colors.grey.shade600,
                       ),
                       onTap: () {
-                        logout();
+                        if (token != null) {
+                          logout(token); // OK
+                        }
                       },
                     ),
                   ],

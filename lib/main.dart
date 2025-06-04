@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:terbangin/splashscreen.dart';
+import 'package:terbangin/token_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TokenProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -17,6 +26,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Poppins',
         // colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
+      
       home: const Splashscreen(),
       debugShowCheckedModeBanner: false,
       // initialRoute: '/',

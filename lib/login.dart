@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terbangin/main_page.dart';
 import 'package:terbangin/register.dart';
 import 'package:terbangin/services/auth_service.dart';
+import 'package:terbangin/token_provider.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
 
   @override
   State<Login> createState() => _LoginState();
-}
+} 
 
 class _LoginState extends State<Login> {
   final TextEditingController emailController = TextEditingController();
@@ -19,33 +21,39 @@ class _LoginState extends State<Login> {
   bool passwordVisible = false;
 
   Future<void> login() async {
-    setState(() => isLoading = true);
-    final response = await AuthService().login(
-      emailController.text,
-      passwordController.text,
+  setState(() => isLoading = true);
+
+  final response = await AuthService().login(
+    emailController.text,
+    passwordController.text,
+  );
+
+  setState(() => isLoading = false);
+
+  print('Login result: $response');
+
+  if (response['success']) {
+    final token = response['token'] as String; // Ambil token dari response API
+
+    // Simpan token ke SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+
+    // Simpan ke Provider
+    Provider.of<TokenProvider>(context, listen: false).setToken(token);
+
+    // Pindah ke MainPage
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const MainPage()),
     );
-
-    setState(() => isLoading = false);
-
-    print('Login result: $response');
-
-    if (response['success']) {
-      // simpan token
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', response['token']);
-
-      // pindah ke main page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
-      );
-    } else {
-      // tampilkan error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Login failed')),
-      );
-    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(response['message'] ?? 'Login failed')),
+    );
   }
+}
+
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 

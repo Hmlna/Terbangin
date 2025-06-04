@@ -5,22 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terbangin/flight.dart';
 
-// MODEL USER
-class User {
-  final int id;
-  final String name;
-  final String email;
-
-  User({required this.id, required this.name, required this.email});
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-    );
-  }
-}
+import 'package:terbangin/models/UserModel.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
