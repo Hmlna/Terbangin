@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:terbangin/constants.dart';
 import 'package:terbangin/flight.dart';
 import 'package:terbangin/login.dart';
-
 import 'package:terbangin/models/UserModel.dart';
-import 'package:terbangin/constants.dart';
-import 'package:terbangin/token_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:terbangin/profile.dart';
+import 'package:terbangin/token_provider.dart'; // For formatting dates
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -21,67 +22,169 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   bool isLoading = true;
   String? name;
-  // String? token;
-  User? user; // Ganti String? name jadi User? user
+
+  User? user;
+  List<String> fromCities = [];
+  List<String> toCities = [];
+  String? selectedFrom;
+  String? selectedTo;
+  DateTime? selectedDate; // Store selected date
+  List<dynamic> flights = []; // Store full flight data
 
   @override
   void initState() {
     super.initState();
+
+    fetchFlightCities(1);
     loadTokenAndProfile();
+    selectedDate = DateTime.now(); // Default to current date
   }
 
   Future<void> loadTokenAndProfile() async {
-  final token = Provider.of<TokenProvider>(context, listen: false).token;
-  if (token != null && token.isNotEmpty) {
-    await fetchProfile(token);
-  } else {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const Login()),
-      (route) => false,
-    );
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
+    if (token != null && token.isNotEmpty) {
+      await fetchProfile(token);
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const Login()),
+        (route) => false,
+      );
+    }
   }
-}
 
   Future<void> fetchProfile(String token) async {
-  setState(() {
-    isLoading = true;
-  });
-  final url = Uri.parse('$baseUrl/user');
-  try {
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
-    );
+    setState(() {
+      isLoading = true;
+    });
+    final url = Uri.parse('$baseUrl/user');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        user = User.fromJson(data);
-        isLoading = false;
-      });
-    } else {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          user = User.fromJson(data);
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          user = null;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
         user = null;
         isLoading = false;
       });
     }
-  } catch (e) {
-    setState(() {
-      user = null;
-      isLoading = false;
-    });
   }
-}
+
+  Future<void> fetchFlightCities(action) async {
+    final token = Provider.of<TokenProvider>(context, listen: false).token;
+
+    // final prefs = await SharedPreferences.getInstance();
+    // final token = prefs.getString('token');
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/flights'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['status'] == 'success') {
+          setState(() {
+            if (action == 1) {
+              flights = jsonData['data'];
+              fromCities =
+                  flights
+                      .map((flight) => flight['from'] as String)
+                      .toSet()
+                      .toList()
+                    ..sort();
+              selectedFrom = null;
+              selectedTo = null;
+            } else {
+              toCities =
+                  flights
+                      .map((flight) => flight['destination'] as String)
+                      .toSet()
+                      .toList()
+                    ..sort();
+            }
+          });
+        }
+      } else {
+        print('Failed to fetch flights. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching flight cities: $e');
+    }
+  }
+
+  List<String> getAvailableDestinations(String? selectedFrom) {
+    if (selectedFrom == null) {
+      return flights
+          .map((flight) => flight['destination'] as String)
+          .toSet()
+          .toList()
+        ..sort();
+    }
+    return flights
+        .where((flight) => flight['from'] == selectedFrom)
+        .map((flight) => flight['destination'] as String)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  // Date picker function
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
+  // Generate JSON for search
+  Map<String, dynamic> generateSearchJson() {
+    return {
+      'from': selectedFrom,
+      'to': selectedTo,
+      'date':
+          selectedDate != null
+              ? DateFormat('yyyy-MM-dd').format(selectedDate!)
+              : null,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     String displayName = user?.name ?? "User";
+    String displayDate =
+        selectedDate != null
+            ? DateFormat('MMM d, yyyy').format(selectedDate!)
+            : "Select Date";
 
     return Scaffold(
       body: Stack(
@@ -110,7 +213,11 @@ class _HomeState extends State<Home> {
                         backgroundImage: const AssetImage("assets/avatar.png"),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.notifications_none_outlined, color: Colors.white, size: 30),
+                        icon: const Icon(
+                          Icons.notifications_none_outlined,
+                          color: Colors.white,
+                          size: 30,
+                        ),
                         onPressed: () {},
                       ),
                     ],
@@ -122,11 +229,19 @@ class _HomeState extends State<Home> {
                   child: Text.rich(
                     TextSpan(
                       text: "Hello, ",
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                       children: [
                         TextSpan(
-                          text: "$displayName",
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Color(0xFFFFF100)),
+                          text: displayName,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFFFF100),
+                          ),
                         ),
                       ],
                     ),
@@ -136,7 +251,11 @@ class _HomeState extends State<Home> {
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     "Where do you want to travel?",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -144,7 +263,10 @@ class _HomeState extends State<Home> {
                   margin: const EdgeInsets.only(top: 24),
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                    ),
                   ),
                   width: MediaQuery.of(context).size.width,
                   child: Transform.translate(
@@ -170,22 +292,39 @@ class _HomeState extends State<Home> {
                                 padding: const EdgeInsets.all(26),
                                 child: Column(
                                   children: [
-                                    _buildInputField(
+                                    _buildDropdownField(
                                       icon: Icons.flight_takeoff,
                                       title: "From",
-                                      value: "Yogyakarta (YIA)",
+                                      value: selectedFrom,
+                                      items: fromCities,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedFrom = value;
+                                          selectedTo = null;
+                                          toCities = getAvailableDestinations(
+                                            value,
+                                          );
+                                        });
+                                      },
                                     ),
                                     const SizedBox(height: 12),
-                                    _buildInputField(
+                                    _buildDropdownField(
                                       icon: Icons.flight_land,
                                       title: "To",
-                                      value: "Jakarta (CGK)",
+                                      value: selectedTo,
+                                      items: toCities,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedTo = value;
+                                        });
+                                      },
                                     ),
                                     const SizedBox(height: 12),
-                                    _buildInputField(
+                                    _buildDateField(
                                       icon: Icons.date_range,
                                       title: "Departure",
-                                      value: "Mar 19, 2025",
+                                      value: displayDate,
+                                      onTap: () => _selectDate(context),
                                     ),
                                     const SizedBox(height: 12),
                                     Row(
@@ -213,16 +352,51 @@ class _HomeState extends State<Home> {
                                       height: 44,
                                       child: ElevatedButton(
                                         onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(builder: (_) => const Flight()),
-                                          );
+                                          if (selectedFrom != null &&
+                                              selectedTo != null &&
+                                              selectedDate != null) {
+                                            // Generate JSON
+                                            final searchData =
+                                                generateSearchJson();
+                                            print(
+                                              jsonEncode(searchData),
+                                            ); // For debugging
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => Flight(
+                                                      searchData: searchData,
+                                                    ),
+                                              ),
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Please select From, To, and Departure date",
+                                                ),
+                                              ),
+                                            );
+                                          }
                                         },
+
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF006BFF),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          backgroundColor: const Color(
+                                            0xFF006BFF,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
                                         ),
-                                        child: const Text("Search Flight", style: TextStyle(color: Colors.white)),
+                                        child: const Text(
+                                          "Search Flight",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -235,7 +409,13 @@ class _HomeState extends State<Home> {
                         Container(
                           alignment: Alignment.centerLeft,
                           margin: const EdgeInsets.symmetric(horizontal: 24),
-                          child: const Text("Top Destination", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                          child: const Text(
+                            "Top Destination",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Padding(
@@ -243,9 +423,18 @@ class _HomeState extends State<Home> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildDestinationItem("assets/jakarta.png", "Jakarta"),
-                              _buildDestinationItem("assets/nusa-penida.png", "Denpasar"),
-                              _buildDestinationItem("assets/borobudur.png", "Yogyakarta"),
+                              _buildDestinationItem(
+                                "assets/jakarta.png",
+                                "Jakarta",
+                              ),
+                              _buildDestinationItem(
+                                "assets/nusa-penida.png",
+                                "Denpasar",
+                              ),
+                              _buildDestinationItem(
+                                "assets/borobudur.png",
+                                "Yogyakarta",
+                              ),
                             ],
                           ),
                         ),
@@ -262,7 +451,11 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildInputField({required IconData icon, required String title, required String value}) {
+  Widget _buildInputField({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -278,8 +471,160 @@ class _HomeState extends State<Home> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required IconData icon,
+    required String title,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.grey.shade100,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: Colors.grey),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required IconData icon,
+    required String title,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade100,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+                DropdownButton<String>(
+                  value: value,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  hint: const Text(
+                    "Select City",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  dropdownColor: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  items:
+                      items.isEmpty
+                          ? [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text(
+                                "No destinations available",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ]
+                          : items.map((String city) {
+                            return DropdownMenuItem<String>(
+                              value: city,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text(
+                                  city,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color.fromARGB(255, 0, 0, 0),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                  onChanged: items.isEmpty ? null : onChanged,
+                  menuMaxHeight: 300,
+                  style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                  selectedItemBuilder: (BuildContext context) {
+                    return items.map((String city) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 10.0),
+                        child: Text(
+                          city,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                      );
+                    }).toList();
+                  },
+                  itemHeight: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
               ],
             ),
           ),
@@ -301,7 +646,10 @@ class _HomeState extends State<Home> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(cityName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(
+          cityName,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }
