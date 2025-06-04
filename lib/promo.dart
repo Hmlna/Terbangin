@@ -1,32 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
-class Promo {
-  final int promoId;
-  final String promoCode;
-  final String description;
-  final double discount;
-  final String validUntil;
-
-  Promo({
-    required this.promoId,
-    required this.promoCode,
-    required this.description,
-    required this.discount,
-    required this.validUntil,
-  });
-
-  factory Promo.fromJson(Map<String, dynamic> json) {
-    return Promo(
-      promoId: json['promo_id'],
-      promoCode: json['promo_code'],
-      description: json['description'] ?? '',
-      discount: double.tryParse(json['discount'].toString()) ?? 0.0,
-      validUntil: json['valid_until'],
-    );
-  }
-}
+import 'package:terbangin/models/PromoModel.dart';
+import 'package:terbangin/constants.dart';
 
 class PromoScreen extends StatefulWidget {
   const PromoScreen({Key? key}) : super(key: key);
@@ -46,9 +22,10 @@ class _PromoScreenState extends State<PromoScreen> {
   }
 
   Future<void> fetchPromos() async {
-    const url = 'http://10.0.2.2:8000/api/promos'; // Ganti jika perlu
+    final url = Uri.parse('$baseUrl/promos');
+    // const url = 'http://10.0.2.2:8000/api/promos'; // Ganti jika perlu
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(url);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body)['data'];
         setState(() {

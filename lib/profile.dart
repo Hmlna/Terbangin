@@ -5,10 +5,9 @@ import 'package:terbangin/edit_profile.dart';
 import 'package:terbangin/login.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'package:terbangin/models/UserModel.dart';
 import 'package:terbangin/token_provider.dart';
-final baseUrl = 'http://10.0.2.2:8000/api'; // Sesuaikan API kamu
+import 'package:terbangin/constants.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});

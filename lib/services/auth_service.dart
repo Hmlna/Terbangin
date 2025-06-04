@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:terbangin/constants.dart';
 
 class AuthService {
-  final String baseUrl = 'http://10.0.2.2:8000/api'; // sesuaikan
 
   Future<Map<String, dynamic>> login(String email, String password) async {
   try {

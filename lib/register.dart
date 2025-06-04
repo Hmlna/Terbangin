@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:terbangin/main_page.dart';
+import 'package:terbangin/login.dart';
+// import 'package:terbangin/main_page.dart';
 import 'package:terbangin/services/auth_service.dart';
 
 class Register extends StatefulWidget {
@@ -36,7 +37,7 @@ class _RegisterState extends State<Register> {
       // pindah ke halaman utama
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
+        MaterialPageRoute(builder: (context) => const Login()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

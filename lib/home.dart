@@ -2,10 +2,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terbangin/flight.dart';
+import 'package:terbangin/login.dart';
 
 import 'package:terbangin/models/UserModel.dart';
+import 'package:terbangin/constants.dart';
+import 'package:terbangin/token_provider.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -15,45 +19,65 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  User? user;
+  bool isLoading = true;
+  String? name;
+  // String? token;
+  User? user; // Ganti String? name jadi User? user
 
   @override
   void initState() {
     super.initState();
-    getUserProfile();
+    loadTokenAndProfile();
   }
 
-  void getUserProfile() async {
-    User? fetchedUser = await fetchProfile();
-    if (fetchedUser != null) {
+  Future<void> loadTokenAndProfile() async {
+  final token = Provider.of<TokenProvider>(context, listen: false).token;
+  if (token != null && token.isNotEmpty) {
+    await fetchProfile(token);
+  } else {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const Login()),
+      (route) => false,
+    );
+  }
+}
+
+  Future<void> fetchProfile(String token) async {
+  setState(() {
+    isLoading = true;
+  });
+  final url = Uri.parse('$baseUrl/user');
+  try {
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
       setState(() {
-        user = fetchedUser;
+        user = User.fromJson(data);
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        user = null;
+        isLoading = false;
       });
     }
+  } catch (e) {
+    setState(() {
+      user = null;
+      isLoading = false;
+    });
   }
-
-  Future<User?> fetchProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    if (token != null) {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/user'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        return User.fromJson(jsonData);
-      } else {
-        print('Gagal ambil profil. Kode: ${response.statusCode}');
-      }
-    }
-    return null;
-  }
+}
 
   @override
   Widget build(BuildContext context) {
