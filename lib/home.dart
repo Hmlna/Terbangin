@@ -3,15 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terbangin/constants.dart';
 import 'package:terbangin/flight.dart';
 import 'package:terbangin/login.dart';
 import 'package:terbangin/models/UserModel.dart';
 import 'package:intl/intl.dart';
-import 'package:terbangin/profile.dart';
-import 'package:terbangin/token_provider.dart'; // For formatting dates
-
+import 'package:terbangin/token_provider.dart'; 
 class Home extends StatefulWidget {
   const Home({super.key});
 
@@ -96,7 +93,7 @@ class _HomeState extends State<Home> {
     // final token = prefs.getString('token');
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/flights'),
+        Uri.parse('$baseUrl/flights'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -168,13 +165,15 @@ class _HomeState extends State<Home> {
 
   // Generate JSON for search
   Map<String, dynamic> generateSearchJson() {
+    String? formattedDate;
+    if (selectedDate != null) {
+      formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
+      print('Formatted departure date: $formattedDate'); // Debug print
+    }
     return {
       'from': selectedFrom,
-      'to': selectedTo,
-      'date':
-          selectedDate != null
-              ? DateFormat('yyyy-MM-dd').format(selectedDate!)
-              : null,
+      'destination': selectedTo,
+      'departure': formattedDate,
     };
   }
 

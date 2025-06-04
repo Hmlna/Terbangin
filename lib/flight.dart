@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terbangin/constants.dart';
 import 'package:terbangin/ticket_detail.dart';
 import 'package:terbangin/token_provider.dart';
@@ -49,10 +50,11 @@ class _FlightState extends State<Flight> {
           setState(() {
             flights = jsonData['data'];
             print(flights);
+            
           });
         }
       } else {
-        print('Failed to fetch flights. Status code: ${response.statusCode}');
+        print('Failed to search flights. Status code: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching flight cities: $e');
@@ -88,20 +90,23 @@ class _FlightState extends State<Flight> {
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Denpasar - Jakarta",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        "3 Passengers · Economy",
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
+                    // children: [
+                    //   flights.isNotEmpty
+                    //   ? Text(
+                    //       "${flights[0]['from']} - ${flights[0]['destination']}",
+                    //       style: const TextStyle(
+                    //         fontSize: 12,
+                    //         fontWeight: FontWeight.w600,
+                    //       ),
+                    //     )
+                    //   : const Text(
+                    //       "Loading...",
+                    //       style: TextStyle(
+                    //         fontSize: 16,
+                    //         fontWeight: FontWeight.w600,
+                    //       ),
+                    //     )
+                    // ],
                   ),
                   const Spacer(),
                   IconButton(onPressed: () {}, icon: const Icon(Icons.tune)),
@@ -110,109 +115,80 @@ class _FlightState extends State<Flight> {
             ),
             SizedBox(height: 58),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _buildFlightCard(
-                    context: context,
-                    logoPath: 'assets/garuda-indonesia.png',
-                    airline: 'Garuda Indonesia',
-                    flightCode: 'GA-754',
-                    from: 'DPS',
-                    to: 'CGK',
-                    departTime: '09:45 AM',
-                    arriveTime: '10:35 AM',
-                    duration: '1 hour 30 minutes',
-                    price: 'IDR 1.500.000',
-                  ),
-                  _buildFlightCard(
-                    context: context,
-                    logoPath: 'assets/citilink.png',
-                    airline: 'Citilink',
-                    flightCode: 'QG-843',
-                    from: 'DPS',
-                    to: 'CGK',
-                    departTime: '10:45 AM',
-                    arriveTime: '11:30 AM',
-                    duration: '1 hour 25 minutes',
-                    price: 'IDR 1.200.000',
-                  ),
-                  _buildFlightCard(
-                    context: context,
-                    logoPath: 'assets/air-asia.png',
-                    airline: 'AirAsia',
-                    flightCode: 'QZ-457',
-                    from: 'DPS',
-                    to: 'CGK',
-                    departTime: '11:45 AM',
-                    arriveTime: '01:55 PM',
-                    duration: '1 hour 50 minutes',
-                    price: 'IDR 1.300.000',
-                  ),
-                  _buildFlightCard(
-                    context: context,
-                    logoPath: 'assets/lion-air.png',
-                    airline: 'Lion Air',
-                    flightCode: 'JT-384',
-                    from: 'DPS',
-                    to: 'CGK',
-                    departTime: '02:25 PM',
-                    arriveTime: '03:15 PM',
-                    duration: '1 hour 50 minutes',
-                    price: 'IDR 1.600.000',
-                  ),
-                  _buildFlightCard(
-                    context: context,
-                    logoPath: 'assets/lion-air.png',
-                    airline: 'Lion Air',
-                    flightCode: 'IN-843',
-                    from: 'DPS',
-                    to: 'CGK',
-                    departTime: '04:45 PM',
-                    arriveTime: '05:55 PM',
-                    duration: '1 hour 10 minutes',
-                    price: 'IDR 1.200.000',
-                  ),
-                  _buildFlightCard(
-                    context: context,
-                    logoPath: 'assets/lion-air.png',
-                    airline: 'Lion Air',
-                    flightCode: 'IN-843',
-                    from: 'DPS',
-                    to: 'CGK',
-                    departTime: '04:45 PM',
-                    arriveTime: '05:55 PM',
-                    duration: '1 hour 10 minutes',
-                    price: 'IDR 1.200.000',
-                  ),
-                  _buildFlightCard(
-                    context: context,
-                    logoPath: 'assets/lion-air.png',
-                    airline: 'Lion Air',
-                    flightCode: 'IN-843',
-                    from: 'DPS',
-                    to: 'CGK',
-                    departTime: '04:45 PM',
-                    arriveTime: '05:55 PM',
-                    duration: '1 hour 10 minutes',
-                    price: 'IDR 1.200.000',
-                  ),
-                ],
-              ),
+              child: flights.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: flights.length,
+                      itemBuilder: (context, index) {
+                        final flight = flights[index];
+                        return _buildFlightCard(
+                          context: context,
+                          logoPath: getAirlineLogo(flight['airline_name']), // atau bisa sesuaikan berdasarkan airline_name
+                          airline: flight['airline_name'] ?? '',
+                          flightCode: flight['flight_number'] ?? '',
+                          from: flight['from'] ?? '',
+                          to: flight['destination'] ?? '',
+                          departure: (flight['departure']),
+                          arrival: (flight['arrival']),
+                          duration: _calculateDuration(flight['departure'], flight['arrival']),
+                          price: formatPrice(flight['price']),
+                        );
+                      },
+                    ),
             ),
+
           ],
         ),
       ),
     );
   }
 
+  String _formatTime(String dateTimeStr) {
+  final dateTime = DateTime.parse(dateTimeStr);
+  return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+}
+
+String formatPrice(String priceStr) {
+  final doublePrice = double.tryParse(priceStr) ?? 0.0;
+  final intPrice = doublePrice.toInt();
+
+  return 'IDR ${intPrice.toString().replaceAllMapped(
+    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    (m) => '${m[1]}.',
+  )}';
+}
+
+String _calculateDuration(String departureStr, String arrivalStr) {
+  final departure = DateTime.parse(departureStr);
+  final arrival = DateTime.parse(arrivalStr);
+  final duration = arrival.difference(departure);
+
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes.remainder(60);
+  return '$hours hour${hours > 1 ? 's' : ''} $minutes minute${minutes != 1 ? 's' : ''}';
+}
+
+String getAirlineLogo(String airlineName) {
+  if (airlineName.toLowerCase().contains('garuda')) {
+    return 'assets/garuda-indonesia.png';
+  } else if (airlineName.toLowerCase().contains('citilink')) {
+    return 'assets/citilink.png';
+  } else if (airlineName.toLowerCase().contains('airasia')) {
+    return 'assets/air-asia.png';
+  } else {
+    return 'assets/lion-air.png';
+  }
+}
+
+
   Widget _buildFlightCard({
     required BuildContext context,
     required String logoPath,
     required String airline,
     required String flightCode,
-    required String departTime,
-    required String arriveTime,
+    required String departure,
+    required String arrival,
     required String duration,
     required String from,
     required String to,
@@ -230,12 +206,11 @@ class _FlightState extends State<Flight> {
                     'flightCode': flightCode,
                     'from': from,
                     'to': to,
-                    'departure': departTime,
-                    'arrival': arriveTime,
+                    'departure': departure,
+                    'arrival': arrival,
                     'duration': duration,
-                    'date': 'Sunday, March 30',
-                    'fromTerminal': 'Ngurah Rai - Domestic Terminal',
-                    'toTerminal': 'Soekarno Hatta - Terminal 3B',
+                    'fromTerminal': 'Domestic Terminal',
+                    'toTerminal': 'Terminal 3B',
                     'class': 'Economy',
                     'price': price,
                   },
@@ -264,12 +239,12 @@ class _FlightState extends State<Flight> {
             Row(
               children: [
                 Text(
-                  departTime,
+                  _formatTime(departure),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 Text(
-                  arriveTime,
+                   _formatTime(arrival),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
@@ -281,9 +256,8 @@ class _FlightState extends State<Flight> {
                   children: [
                     Text(
                       from,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     ),
-                    Text("Denpasar", style: const TextStyle(fontSize: 10)),
                   ],
                 ),
                 const Spacer(),
@@ -306,9 +280,8 @@ class _FlightState extends State<Flight> {
                   children: [
                     Text(
                       to,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     ),
-                    Text("Jakarta", style: const TextStyle(fontSize: 10)),
                   ],
                 ),
               ],

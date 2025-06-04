@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:terbangin/flighfacility.dart';
 import 'package:terbangin/passenger.dart';
 
@@ -75,7 +76,7 @@ class TicketDetail extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "${ticket['date']} - ${ticket['departure']}",
+                                "${formatToDayMonthDate(ticket['departure'])} - ${_formatTime(ticket['departure'])}",
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 16),
                               ),
@@ -85,7 +86,7 @@ class TicketDetail extends StatelessWidget {
                               _flightCard(context, ticket),
                               const SizedBox(height: 24),
                               Text(
-                                "${ticket['date']} - ${ticket['arrival']}",
+                                "${formatToDayMonthDate(ticket['arrival'])} - ${_formatTime(ticket['arrival'])}",
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 16),
                               ),
@@ -240,4 +241,28 @@ class TicketDetail extends StatelessWidget {
       return 'assets/default-airline.png';
     }
   }
+String formatToDayMonthDate(String rawDateTime) {
+  try {
+    // Coba langsung parse dulu
+    DateTime parsedDate;
+
+    if (rawDateTime.contains('T')) {
+      // Format ISO 8601: 2024-06-04T15:00:00
+      parsedDate = DateTime.parse(rawDateTime);
+    } else {
+      // Misal format: 2024-06-04 15:00:00
+      parsedDate = DateFormat('yyyy-MM-dd HH:mm:ss').parse(rawDateTime);
+    }
+
+    return DateFormat('EEEE, MMMM d').format(parsedDate);
+  } catch (e) {
+    print("Date parse error: $e | raw: $rawDateTime");
+    return 'Invalid date';
+  }
+}
+ String _formatTime(String dateTimeStr) {
+  final dateTime = DateTime.parse(dateTimeStr);
+  return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+}
+
 }
