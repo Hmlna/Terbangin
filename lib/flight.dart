@@ -11,8 +11,8 @@ import 'package:terbangin/token_provider.dart';
 
 class Flight extends StatefulWidget {
   final Map<String, dynamic> searchData;
-
-  const Flight({super.key, required this.searchData});
+  final int user_id;
+  const Flight({super.key, required this.searchData, required this.user_id});
 
   @override
   State<Flight> createState() => _FlightState();
@@ -132,7 +132,9 @@ class _FlightState extends State<Flight> {
                           departure: (flight['departure']),
                           arrival: (flight['arrival']),
                           duration: _calculateDuration(flight['departure'], flight['arrival']),
-                          price: formatPrice(flight['price']),
+                          price: (flight['price']),
+                          user_id: (widget.user_id)
+                          
                         );
                       },
                     ),
@@ -193,6 +195,7 @@ String getAirlineLogo(String airlineName) {
     required String from,
     required String to,
     required String price,
+    required int user_id
   }) {
     return GestureDetector(
       onTap: () {
@@ -213,6 +216,7 @@ String getAirlineLogo(String airlineName) {
                     'toTerminal': 'Terminal 3B',
                     'class': 'Economy',
                     'price': price,
+                    'user_id': user_id,
                   },
                 ),
           ),
@@ -298,7 +302,7 @@ String getAirlineLogo(String airlineName) {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      price,
+                      formatPrice(price),
                       style: const TextStyle(fontSize: 15, color: Colors.red),
                     ),
                     Text(

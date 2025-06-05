@@ -77,10 +77,13 @@ class _PassengerState extends State<Passenger> {
               width: 351,
               child: ElevatedButton(
                 onPressed: () {
+                  print("aaleokfoawkod");
+                  print(widget.ticket);
+                  print(widget.ticket['user_id']);
                       Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => Payment(),
+                        builder: (_) => Payment(ticket: widget.ticket, user_id: widget.ticket['user_id']),
                         ),
                       );
                     },
@@ -109,7 +112,7 @@ class _PassengerState extends State<Passenger> {
           const Text("Passenger details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           const Text("All passenger data must be filled in*", style: TextStyle(color: Colors.red, fontSize: 13)),
           const SizedBox(height: 20),
-          ...List.generate(3, (i) {
+          ...List.generate(1, (i) {
             return Card(
               margin: EdgeInsets.only(bottom: 15),
               color: Colors.white,

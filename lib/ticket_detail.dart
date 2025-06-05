@@ -115,7 +115,7 @@ class TicketDetail extends StatelessWidget {
                     children: [
                       const Text("Total", style: TextStyle(fontSize: 12, color: Colors.grey)),
                       Text(
-                        ticket['price'] ?? 'IDR -',
+                        formatPrice(ticket['price'] ?? 'IDR -'),
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
@@ -265,4 +265,13 @@ String formatToDayMonthDate(String rawDateTime) {
   return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
 }
 
+String formatPrice(String priceStr) {
+  final doublePrice = double.tryParse(priceStr) ?? 0.0;
+  final intPrice = doublePrice.toInt();
+
+  return 'IDR ${intPrice.toString().replaceAllMapped(
+    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    (m) => '${m[1]}.',
+  )}';
+}
 }

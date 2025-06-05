@@ -365,7 +365,7 @@ class _HomeState extends State<Home> {
                                               MaterialPageRoute(
                                                 builder:
                                                     (_) => Flight(
-                                                      searchData: searchData,
+                                                      searchData: searchData,user_id:user!.id,
                                                     ),
                                               ),
                                             );
