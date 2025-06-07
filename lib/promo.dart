@@ -85,26 +85,75 @@ class PromoBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        gradient: LinearGradient(
+          colors: [Color(0xFF006BFF), Color.fromARGB(255, 35, 66, 105)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          )
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            promo.promoCode,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          // Icon Kode Promo
+          CircleAvatar(
+            backgroundColor: Colors.white,
+            radius: 26,
+            child: Icon(Icons.local_offer, color: Color(0xFF006BFF), size: 30),
           ),
-          const SizedBox(height: 8),
-          Text(promo.description),
-          const SizedBox(height: 8),
-          Text('Discount: ${promo.discount.toStringAsFixed(0)}%'),
+          const SizedBox(width: 16),
+
+          // Info Promo
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  promo.promoCode.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  promo.description,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.discount, color: Colors.yellowAccent, size: 20),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${promo.discount.toStringAsFixed(0)}% Discount',
+                      style: const TextStyle(
+                        color: Colors.yellowAccent,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          )
         ],
       ),
     );
   }
 }
+
