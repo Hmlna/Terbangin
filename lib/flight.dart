@@ -2,9 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terbangin/constants.dart';
 import 'package:terbangin/ticket_detail.dart';
 import 'package:terbangin/token_provider.dart';
@@ -133,7 +131,8 @@ class _FlightState extends State<Flight> {
                           arrival: (flight['arrival']),
                           duration: _calculateDuration(flight['departure'], flight['arrival']),
                           price: (flight['price']),
-                          user_id: (widget.user_id)
+                          user_id: (widget.user_id),
+                          flight_id: flight['flight_id'],
                           
                         );
                       },
@@ -195,7 +194,8 @@ String getAirlineLogo(String airlineName) {
     required String from,
     required String to,
     required String price,
-    required int user_id
+    required int user_id,
+    required int flight_id
   }) {
     return GestureDetector(
       onTap: () {
@@ -217,6 +217,7 @@ String getAirlineLogo(String airlineName) {
                     'class': 'Economy',
                     'price': price,
                     'user_id': user_id,
+                    'flight_id': flight_id
                   },
                 ),
           ),

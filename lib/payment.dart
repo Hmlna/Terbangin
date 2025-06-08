@@ -37,6 +37,75 @@ class _PaymentState extends State<Payment> {
     originalPrice = parsePrice(widget.ticket['price'].toString());
   }
 
+  Future<void> submitPayment() async {
+  final token = Provider.of<TokenProvider>(context, listen: false).token;
+
+  print('--- submitPayment called ---');
+  print('Token: $token');
+  print('Ticket data: ${widget.ticket}');
+  print('User ID: ${widget.user_id}');
+
+  final Map<String, dynamic> requestBody = {
+    'flight_id': widget.ticket['flight_id'],
+    'user_id': widget.user_id,
+    'status': 'pending',
+    'purchase_date': DateTime.now().toIso8601String(),
+    'e_ticket': generateETicketCode(),
+  };
+
+  print('Request body JSON: ${jsonEncode(requestBody)}');
+
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/tickets'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(requestBody),
+    );
+
+    print('Response status code: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 201) {
+      print('Payment success, showing dialog.');
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Successful Payment"),
+          content: const Text("Thank you, your order is being processed."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => MainPage()),
+                  (route) => false,
+                );
+              },
+              child: const Text("Back to Home"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      print('Payment failed with status ${response.statusCode}');
+      final errorData = json.decode(response.body);
+      print('Error response message: ${errorData['message']}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to make payment: ${errorData['message']}')),
+      );
+    }
+  } catch (e) {
+    print("Exception caught during submitPayment: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  }
+}
+
   Future<void> checkCoupon(String promoCode) async {
     setState(() {
       _isDiscountApplied = false;
@@ -199,30 +268,7 @@ class _PaymentState extends State<Payment> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => AlertDialog(
-                          title: const Text("Successful Payment"),
-                          content: const Text(
-                            "Thank you, your order is being processed.",
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => MainPage()),
-                                  (route) => false,
-                                );
-                              },
-                              child: const Text("Back to Home"),
-                            ),
-                          ],
-                        ),
-                  );
-                },
+                onPressed: submitPayment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF006BFF),
                   shape: RoundedRectangleBorder(
@@ -240,4 +286,11 @@ class _PaymentState extends State<Payment> {
       ),
     );
   }
+  String generateETicketCode() {
+    final now = DateTime.now();
+    final code = 'ET-${now.millisecondsSinceEpoch}-${widget.user_id}';
+    print('Generated e_ticket code: $code');
+    return code;
+  }
+
 }
