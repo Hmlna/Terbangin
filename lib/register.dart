@@ -17,6 +17,7 @@ class _RegisterState extends State<Register> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
+  bool _obscureText = true; // Added to control password visibility
 
   Future<void> register() async {
     setState(() => isLoading = true);
@@ -153,7 +154,7 @@ class _RegisterState extends State<Register> {
 
                     TextField(
                       controller: passwordController,
-                      obscureText: true,
+                      obscureText: _obscureText,
                       decoration: InputDecoration(
                         hintText: "Password",
                         filled: true,
@@ -165,6 +166,17 @@ class _RegisterState extends State<Register> {
                         focusedBorder: OutlineInputBorder(
                           borderSide: const BorderSide(width: 1, color: Color(0xFF006BFF)),
                           borderRadius: BorderRadius.circular(10),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureText ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureText = !_obscureText;
+                            });
+                          },
                         ),
                       ),
                     ),
