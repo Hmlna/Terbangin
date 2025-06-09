@@ -30,10 +30,15 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
     _tabController = TabController(length: 2, vsync: this);
     final token = Provider.of<TokenProvider>(context, listen: false).token;
 
+    print('Initializing Order with token: $token');
     fetchProfile(token).then((_) {
       if (user != null) {
-        fetchTicket(token);
+        fetchTicket(token).then((_) {
+          print('Tickets fetched, checking flight status');
+          checkAndUpdateFlightStatus(token);
+        });
       } else {
+        print('No user found, stopping fetch');
         setState(() {
           isLoading = false;
         });
@@ -42,6 +47,7 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
   }
 
   Future<void> fetchProfile(token) async {
+    print('Fetching profile with token: $token');
     setState(() {
       isLoading = true;
     });
@@ -65,6 +71,7 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
           isLoading = false;
         });
       } else {
+        print('Failed to fetch profile: ${response.statusCode}');
         setState(() {
           user = null;
           isLoading = false;
@@ -80,8 +87,14 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
   }
 
   Future<void> fetchTicket(token) async {
-    print("Masuk");
-    if (user == null) return;
+    print('Fetching tickets for user_id: ${user?.id}');
+    if (user == null) {
+      print('User is null, cannot fetch tickets');
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
 
     setState(() {
       isLoading = true;
@@ -102,32 +115,48 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print(data);
+        print('Ticket data: $data');
         if (data['status'] == 'success') {
-          print("im hereeee");
+          print('Successfully fetched tickets');
           setState(() {
             _allOrders = List<Map<String, dynamic>>.from(data['data']);
+            _activeOrders.clear();
+            _historyOrders.clear();
+            // Use a Set to avoid duplicates
+            final ticketIds = <String>{};
             for (var order in _allOrders) {
+              print('Processing order: $order');
+              final ticketId = order['ticket_id'].toString();
+              if (ticketIds.contains(ticketId)) {
+                print('Duplicate ticket_id $ticketId found, skipping');
+                continue;
+              }
+              ticketIds.add(ticketId);
               if (order['status'] == 'confirmed') {
                 _historyOrders.add(order);
               } else if (order['status'] == 'active') {
                 _activeOrders.add(order);
               }
             }
+            print('Active orders: $_activeOrders');
+            print('History orders: $_historyOrders');
             isLoading = false;
           });
         } else {
+          print('No tickets found or invalid response status');
           setState(() {
             _allOrders = [];
             isLoading = false;
           });
         }
       } else if (response.statusCode == 404) {
+        print('Tickets not found (404)');
         setState(() {
           _allOrders = [];
           isLoading = false;
         });
       } else {
+        print('Failed to fetch tickets: ${response.statusCode}');
         setState(() {
           _allOrders = [];
           isLoading = false;
@@ -139,6 +168,128 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
         _allOrders = [];
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> checkAndUpdateFlightStatus(token) async {
+    print('Checking active orders: ${_activeOrders.length} orders found');
+    if (_activeOrders.isEmpty) {
+      print('No active orders to process');
+      return;
+    }
+
+    for (var order in List.from(_activeOrders)) {
+      // Create a copy to avoid modification issues
+      print('Processing order with ticket_id: ${order['ticket_id']}');
+      try {
+        // Fetch flight details
+        final flightUrl = Uri.parse('$baseUrl/flights/${order['flight_id']}');
+        print('Fetching flight details for flight_id: ${order['flight_id']}');
+        final flightResponse = await http.get(
+          flightUrl,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+
+        print('Flight Response status: ${flightResponse.statusCode}');
+        print('Flight Response body: ${flightResponse.body}');
+
+        if (flightResponse.statusCode == 200) {
+          final flightData = jsonDecode(flightResponse.body);
+          // Access the nested 'data' object
+          final flightDetails = flightData['data'];
+          if (flightDetails == null) {
+            print('Flight data is null for flight_id: ${order['flight_id']}');
+            continue;
+          }
+          final flightStatus = flightDetails['status']?.toString();
+          final arrivalTimeStr = flightDetails['arrival']?.toString();
+          print('Flight status: $flightStatus');
+          print('Arrival time string: $arrivalTimeStr');
+
+          // Skip cancelled flights
+          if (flightStatus == 'cancelled') {
+            print(
+              'Flight ${order['flight_id']} is cancelled, skipping status update',
+            );
+            continue;
+          }
+
+          // Validate arrival time
+          if (arrivalTimeStr == null || arrivalTimeStr.isEmpty) {
+            print(
+              'Invalid or missing arrival time for flight ${order['flight_id']}',
+            );
+            continue;
+          }
+
+          // Parse arrival time
+          try {
+            final arrivalTime = DateTime.parse(arrivalTimeStr);
+            final now = DateTime.now();
+            print('Current time: $now');
+            print('Arrival time: $arrivalTime');
+
+            if (now.isAfter(arrivalTime)) {
+              final flightUrl = Uri.parse(
+                '$baseUrl/flights/${order['flight_id']}',
+              );
+              final flightResponse = await http.put(
+                flightUrl,
+                headers: {
+                  'Authorization': 'Bearer $token',
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode({'status': 'confirmed'}),
+              );
+              print('Flight has arrived, updating ticket status to completed');
+              final ticketUrl = Uri.parse(
+                '$baseUrl/tickets/${order['ticket_id']}',
+              );
+              final updateResponse = await http.put(
+                ticketUrl,
+                headers: {
+                  'Authorization': 'Bearer $token',
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode({'status': 'confirmed'}),
+              );
+
+              print('Update Response status: ${updateResponse.statusCode}');
+              print('Update Response body: ${updateResponse.body}');
+
+              if (updateResponse.statusCode == 200) {
+                setState(() {
+                  order['status'] = 'confirmed';
+                  _activeOrders.remove(order);
+                  _historyOrders.add(order);
+                });
+                print('Ticket ${order['ticket_id']} updated to completed');
+              } else {
+                print(
+                  'Failed to update ticket ${order['ticket_id']}: ${updateResponse.statusCode}',
+                );
+              }
+            } else {
+              print('Flight has not yet arrived');
+            }
+          } catch (e) {
+            print(
+              'Error parsing arrival time for flight ${order['flight_id']}: $e',
+            );
+          }
+        } else {
+          print(
+            'Failed to fetch flight ${order['flight_id']}: ${flightResponse.statusCode}',
+          );
+        }
+      } catch (e) {
+        print('Error processing flight ${order['flight_id']}: $e');
+      }
     }
   }
 
@@ -264,7 +415,6 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
                     order['status'],
                     style: TextStyle(
                       color: Colors.green,
-
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -357,7 +507,6 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
                     order['status'],
                     style: TextStyle(
                       color: Colors.green,
-
                       fontWeight: FontWeight.bold,
                     ),
                   ),
