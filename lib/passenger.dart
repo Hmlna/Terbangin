@@ -1,12 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
-import 'package:terbangin/constants.dart';
 import 'package:terbangin/models/UserModel.dart';
 import 'package:terbangin/passengerform.dart';
 import 'package:terbangin/payment.dart';
-import 'package:terbangin/token_provider.dart';
 
 class Passenger extends StatefulWidget {
   final Map<String, dynamic> ticket;
@@ -33,7 +28,6 @@ class _PassengerState extends State<Passenger> {
   @override
   void initState() {
     super.initState();
-    final token = Provider.of<TokenProvider>(context, listen: false).token;
   }
 
   void _openPassengerForm(int index) {
@@ -51,6 +45,20 @@ class _PassengerState extends State<Passenger> {
             },
           ),
     );
+  }
+
+  // Check if all required fields for all passengers are filled
+  bool _areAllPassengersFilled() {
+    for (int i = 0; i < widget.passenger_num; i++) {
+      final passenger = passengers[i];
+      if (passenger["title"].isEmpty ||
+          passenger["fullName"].isEmpty ||
+          passenger["birthDate"].isEmpty ||
+          passenger["nik_number"].isEmpty) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override
@@ -94,23 +102,22 @@ class _PassengerState extends State<Passenger> {
             SizedBox(
               width: 351,
               child: ElevatedButton(
-                onPressed: () async {
-                  // final success = await _savePassengerData();
-                  // if (success) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => Payment(
-                            ticket: widget.ticket,
-                            user_id: widget.ticket['user_id'],
-                            passengerList: passengers,
-                            passenger_num: widget.passenger_num,
+                onPressed: _areAllPassengersFilled()
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => Payment(
+                                  ticket: widget.ticket,
+                                  user_id: widget.ticket['user_id'],
+                                  passengerList: passengers,
+                                  passenger_num: widget.passenger_num,
+                                ),
                           ),
-                    ),
-                  );
-                  // }
-                },
+                        );
+                      }
+                    : null, // Disable button if not all fields are filled
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF006BFF),
                   shape: RoundedRectangleBorder(
@@ -153,12 +160,11 @@ class _PassengerState extends State<Passenger> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ListTile(
-                title: Text("Passenger ${i + 1}"),
-                // subtitle: Text(
-                //   passengers[i]["fullName"].isNotEmpty
-                //       ? "${passengers[i]["title"]} ${passengers[i]["fullName"]} (${passengers[i]["birthDate"]})"
-                //       : "Must be filled",
-                // ),
+                title: Text(
+                  passengers[i]["fullName"].isNotEmpty
+                      ? passengers[i]["fullName"]
+                      : "Passenger ${i + 1}",
+                ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () => _openPassengerForm(i),
               ),
