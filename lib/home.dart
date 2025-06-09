@@ -28,6 +28,20 @@ class _HomeState extends State<Home> {
   DateTime? selectedDate;
   List<dynamic> flights = [];
   int? passenger_num = 1; // Initialize passenger_num
+  List<Map<String, dynamic>> allOrders = [];
+  List<Map<String, dynamic>> topDestinations = [];
+
+  // Mapping of city names to image assets
+  final Map<String, dynamic> cityImageMap = {
+    'Jakarta': 'assets/jakarta.png',
+    'Denpasar': 'assets/nusa-penida.png',
+    'Yogyakarta': 'assets/borobudur.png',
+    'Bandung': 'assets/bandung.png',
+    'Medan': 'assets/medan.png',
+    'Makassar': 'assets/makassar.png',
+    'Surabaya': 'assets/surabaya.png',
+    // Add more city-to-image mappings as needed
+  };
 
   @override
   void initState() {
@@ -40,7 +54,11 @@ class _HomeState extends State<Home> {
   Future<void> loadTokenAndProfile() async {
     final token = Provider.of<TokenProvider>(context, listen: false).token;
     if (token != null && token.isNotEmpty) {
+      print('[GET] Token: $token'); // Log token for debugging
       await fetchProfile(token);
+      if (user != null) {
+        await fetchTickets(token);
+      }
     } else {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const Login()),
@@ -84,6 +102,117 @@ class _HomeState extends State<Home> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> fetchTickets(String token) async {
+    if (user == null) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final url = Uri.parse('$baseUrl/tickets/user/${user!.id}');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('Tickets API Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Parsed Tickets Data: $data');
+        if (data['status'] == 'success') {
+          setState(() {
+            allOrders = List<Map<String, dynamic>>.from(data['data']);
+            topDestinations = _getTopDestinations(allOrders);
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            allOrders = [];
+            topDestinations = _getDefaultDestinations();
+            isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          allOrders = [];
+          topDestinations = _getDefaultDestinations();
+          isLoading = false;
+        });
+        // ScaffoldMessenger.of(context).showSnackBar(
+          // SnackBar(content: Text('Failed to fetch tickets: ${response.statusCode}')),
+          print('Failed to fetch tickets: ${response.statusCode}');
+        // );
+      }
+    } catch (e) {
+      setState(() {
+        allOrders = [];
+        topDestinations = _getDefaultDestinations();
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching tickets: $e')),
+      );
+      print('Error fetching tickets: $e');
+    }
+  }
+
+  List<Map<String, dynamic>> _getTopDestinations(List<Map<String, dynamic>> orders) {
+    Map<String, int> destinationCount = {};
+    for (var order in orders) {
+      // Access nested 'destination' field in 'flight'
+      String? destination;
+      if (order['flight'] is Map && order['flight']['destination'] is String) {
+        destination = order['flight']['destination'] as String;
+        // Normalize destination by removing airport code (e.g., "Denpasar (DPS)" -> "Denpasar")
+        destination = destination.split('(')[0].trim();
+      }
+      if (destination != null && destination.isNotEmpty && cityImageMap.containsKey(destination)) {
+        destinationCount[destination] = (destinationCount[destination] ?? 0) + 1;
+      } else {
+        print('Invalid or unmapped destination in order: $order');
+      }
+    }
+
+    var sortedDestinations = destinationCount.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    List<Map<String, dynamic>> topDestinations = sortedDestinations.take(3).map((entry) {
+      return {
+        'city': entry.key,
+        'image': cityImageMap[entry.key] ?? 'assets/default.png',
+      };
+    }).toList();
+
+    if (topDestinations.length < 3) {
+      var defaultDestinations = _getDefaultDestinations();
+      for (var def in defaultDestinations) {
+        if (!topDestinations.any((dest) => dest['city'] == def['city']) &&
+            topDestinations.length < 3) {
+          topDestinations.add(def);
+        }
+      }
+    }
+
+    return topDestinations;
+  }
+
+  List<Map<String, dynamic>> _getDefaultDestinations() {
+    return [
+      {'city': 'Jakarta', 'image': 'assets/jakarta.png'},
+      {'city': 'Denpasar', 'image': 'assets/nusa-penida.png'},
+      {'city': 'Yogyakarta', 'image': 'assets/borobudur.png'},
+      // {'city': 'Bandung', 'image': 'assets/bandung.png'},
+      // {'city': 'Medan', 'image': 'assets/medan.png'},
+      // {'city': 'Makassar', 'image': 'assets/makassar.png'},
+      // {'city': 'Surabaya', 'image': 'assets/surabaya.png'},
+    ];
   }
 
   Future<void> fetchFlightCities(action) async {
@@ -177,9 +306,7 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     String displayName = user?.name ?? "User";
     String displayDate =
-        selectedDate != null
-            ? DateFormat('MMM d, yyyy').format(selectedDate!)
-            : "Select Date";
+        selectedDate != null ? DateFormat('MMM d, yyyy').format(selectedDate!) : "Select Date";
 
     return Scaffold(
       body: Stack(
@@ -207,14 +334,14 @@ class _HomeState extends State<Home> {
                         radius: 21,
                         backgroundImage: const AssetImage("assets/avatar.png"),
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.notifications_none_outlined,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                        onPressed: () {},
-                      ),
+                      // IconButton(
+                      //   icon: const Icon(
+                      //     Icons.notifications_none_outlined,
+                      //     color: Colors.white,
+                      //     size: 30,
+                      //   ),
+                      //   onPressed: () {},
+                      // ),
                     ],
                   ),
                 ),
@@ -296,9 +423,7 @@ class _HomeState extends State<Home> {
                                         setState(() {
                                           selectedFrom = value;
                                           selectedTo = null;
-                                          toCities = getAvailableDestinations(
-                                            value,
-                                          );
+                                          toCities = getAvailableDestinations(value);
                                         });
                                       },
                                     ),
@@ -332,21 +457,19 @@ class _HomeState extends State<Home> {
                                             items: ['1', '2', '3'],
                                             onChanged: (value) {
                                               setState(() {
-                                                passenger_num = int.parse(
-                                                  value!,
-                                                );
+                                                passenger_num = int.parse(value!);
                                               });
                                             },
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: _buildInputField(
-                                            icon: Icons.event_seat,
-                                            title: "Seat Class",
-                                            value: "Economy",
-                                          ),
-                                        ),
+                                        // const SizedBox(width: 12),
+                                        // Expanded(
+                                        //   child: _buildInputField(
+                                        //     icon: Icons.event_seat,
+                                        //     title: "Seat Class",
+                                        //     value: "Economy",
+                                        //   ),
+                                        // ),
                                       ],
                                     ),
                                     const SizedBox(height: 20),
@@ -359,25 +482,20 @@ class _HomeState extends State<Home> {
                                               selectedTo != null &&
                                               selectedDate != null &&
                                               passenger_num != null) {
-                                            final searchData =
-                                                generateSearchJson();
+                                            final searchData = generateSearchJson();
                                             print(jsonEncode(searchData));
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder:
-                                                    (_) => Flight(
-                                                      searchData: searchData,
-                                                      user_id: user!.id,
-                                                      passenger_num:
-                                                          passenger_num!,
-                                                    ),
+                                                builder: (_) => Flight(
+                                                  searchData: searchData,
+                                                  user_id: user!.id,
+                                                  passenger_num: passenger_num!,
+                                                ),
                                               ),
                                             );
                                           } else {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
+                                            ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(
                                                 content: Text(
                                                   "Please select From, To, Departure date, and Passengers",
@@ -387,13 +505,9 @@ class _HomeState extends State<Home> {
                                           }
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFF006BFF,
-                                          ),
+                                          backgroundColor: const Color(0xFF006BFF),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
                                         ),
                                         child: const Text(
@@ -423,66 +537,32 @@ class _HomeState extends State<Home> {
                         const SizedBox(height: 16),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _buildDestinationItem(
-                                "assets/jakarta.png",
-                                "Jakarta",
-                              ),
-                              _buildDestinationItem(
-                                "assets/nusa-penida.png",
-                                "Denpasar",
-                              ),
-                              _buildDestinationItem(
-                                "assets/borobudur.png",
-                                "Yogyakarta",
-                              ),
-                            ],
-                          ),
+                          child: isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: topDestinations.isEmpty
+                                      ? [
+                                          const Center(
+                                            child: Text(
+                                              "No top destinations available",
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                                        ]
+                                      : topDestinations.map((dest) {
+                                          final city = dest['city'] as String;
+                                          final image = dest['image'] as String;
+                                          return _buildDestinationItem(image, city);
+                                        }).toList(),
+                                ),
                         ),
                         const SizedBox(height: 32),
                       ],
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputField({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey.shade100,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -576,23 +656,22 @@ class _HomeState extends State<Home> {
                   ),
                   dropdownColor: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  items:
-                      items.map((String number) {
-                        return DropdownMenuItem<String>(
-                          value: number,
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              number,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Color.fromARGB(255, 0, 0, 0),
-                              ),
-                            ),
+                  items: items.map((String number) {
+                    return DropdownMenuItem<String>(
+                      value: number,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          number,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color.fromARGB(255, 0, 0, 0),
                           ),
-                        );
-                      }).toList(),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                   onChanged: onChanged,
                   menuMaxHeight: 300,
                   style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
@@ -662,37 +741,36 @@ class _HomeState extends State<Home> {
                   ),
                   dropdownColor: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  items:
-                      items.isEmpty
-                          ? [
-                            const DropdownMenuItem<String>(
-                              value: null,
+                  items: items.isEmpty
+                      ? [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text(
+                              "No destinations available",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ]
+                      : items.map((String city) {
+                          return DropdownMenuItem<String>(
+                            value: city,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
                               child: Text(
-                                "No destinations available",
-                                style: TextStyle(
+                                city,
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey,
+                                  color: Color.fromARGB(255, 0, 0, 0),
                                 ),
                               ),
                             ),
-                          ]
-                          : items.map((String city) {
-                            return DropdownMenuItem<String>(
-                              value: city,
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text(
-                                  city,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color.fromARGB(255, 0, 0, 0),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                          );
+                        }).toList(),
                   onChanged: items.isEmpty ? null : onChanged,
                   menuMaxHeight: 300,
                   style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
@@ -732,6 +810,10 @@ class _HomeState extends State<Home> {
             width: 90,
             height: 140,
             fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              print('Image load error for $imagePath: $error');
+              return const Placeholder();
+            },
           ),
         ),
         const SizedBox(height: 8),
