@@ -30,6 +30,21 @@ class _PassengerFormState extends State<PassengerForm> {
     _fullName = widget.initialData["fullName"] ?? "";
     _birthDate = widget.initialData["birthDate"] ?? "";
     _nik = widget.initialData["nik_number"] ?? "";
+
+    // Initialize birthDateController with formatted date
+    if (_birthDate.isNotEmpty) {
+      try {
+        final date = DateTime.parse(_birthDate);
+        selectedDate = date;
+        birthDateController.text =
+            "${date.day.toString().padLeft(2, '0')}/"
+            "${date.month.toString().padLeft(2, '0')}/"
+            "${date.year}";
+      } catch (e) {
+        // Handle invalid date format if necessary
+        birthDateController.text = "";
+      }
+    }
   }
 
   @override
