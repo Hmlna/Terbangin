@@ -5,8 +5,12 @@ import 'package:terbangin/passenger.dart';
 
 class TicketDetail extends StatelessWidget {
   final Map<String, dynamic> ticket;
-
-  const TicketDetail({super.key, required this.ticket});
+  final int passenger_num;
+  const TicketDetail({
+    super.key,
+    required this.ticket,
+    required this.passenger_num,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +65,21 @@ class TicketDetail extends StatelessWidget {
                       children: [
                         Column(
                           children: [
-                            const Icon(Icons.circle, size: 10, color: Colors.blue),
+                            const Icon(
+                              Icons.circle,
+                              size: 10,
+                              color: Colors.blue,
+                            ),
                             Container(
                               width: 2,
                               height: 250,
                               color: Colors.blue,
                             ),
-                            const Icon(Icons.circle_outlined, size: 10, color: Colors.blue),
+                            const Icon(
+                              Icons.circle_outlined,
+                              size: 10,
+                              color: Colors.blue,
+                            ),
                           ],
                         ),
                         const SizedBox(width: 16),
@@ -78,20 +90,30 @@ class TicketDetail extends StatelessWidget {
                               Text(
                                 "${formatToDayMonthDate(ticket['departure'])} - ${_formatTime(ticket['departure'])}",
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
                               const SizedBox(height: 4),
-                              Text(ticket['fromTerminal'], style: const TextStyle(fontSize: 12)),
+                              Text(
+                                ticket['fromTerminal'],
+                                style: const TextStyle(fontSize: 12),
+                              ),
                               const SizedBox(height: 24),
                               _flightCard(context, ticket),
                               const SizedBox(height: 24),
                               Text(
                                 "${formatToDayMonthDate(ticket['arrival'])} - ${_formatTime(ticket['arrival'])}",
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
                               const SizedBox(height: 4),
-                              Text(ticket['toTerminal'], style: const TextStyle(fontSize: 12)),
+                              Text(
+                                ticket['toTerminal'],
+                                style: const TextStyle(fontSize: 12),
+                              ),
                             ],
                           ),
                         ),
@@ -113,11 +135,16 @@ class TicketDetail extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Total", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text(
+                        "Total",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
                       Text(
                         formatPrice(ticket['price'] ?? 'IDR -'),
                         style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -127,19 +154,29 @@ class TicketDetail extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => Passenger(ticket: ticket),
+                          builder:
+                              (_) => Passenger(
+                                ticket: ticket,
+                                passenger_num: passenger_num,
+                              ),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF006BFF),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text("Select Ticket", style: TextStyle(color: Colors.white)),
-                  )
+                    child: const Text(
+                      "Select Ticket",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -161,10 +198,7 @@ class TicketDetail extends StatelessWidget {
         children: [
           Row(
             children: [
-              Image.asset(
-                _getLogo(ticket['airline']),
-                height: 30,
-              ),
+              Image.asset(_getLogo(ticket['airline']), height: 30),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,14 +216,19 @@ class TicketDetail extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Text("Ticket Included",
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text(
+            "Ticket Included",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
           const Row(
             children: [
               Icon(Icons.work_outline, size: 16, color: Colors.grey),
               SizedBox(width: 8),
-              Text("Cabin: 7 kg. Bagage: 15 kg", style: TextStyle(fontSize: 12)),
+              Text(
+                "Cabin: 7 kg. Bagage: 15 kg",
+                style: TextStyle(fontSize: 12),
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -241,37 +280,36 @@ class TicketDetail extends StatelessWidget {
       return 'assets/default-airline.png';
     }
   }
-String formatToDayMonthDate(String rawDateTime) {
-  try {
-    // Coba langsung parse dulu
-    DateTime parsedDate;
 
-    if (rawDateTime.contains('T')) {
-      // Format ISO 8601: 2024-06-04T15:00:00
-      parsedDate = DateTime.parse(rawDateTime);
-    } else {
-      // Misal format: 2024-06-04 15:00:00
-      parsedDate = DateFormat('yyyy-MM-dd HH:mm:ss').parse(rawDateTime);
+  String formatToDayMonthDate(String rawDateTime) {
+    try {
+      // Coba langsung parse dulu
+      DateTime parsedDate;
+
+      if (rawDateTime.contains('T')) {
+        // Format ISO 8601: 2024-06-04T15:00:00
+        parsedDate = DateTime.parse(rawDateTime);
+      } else {
+        // Misal format: 2024-06-04 15:00:00
+        parsedDate = DateFormat('yyyy-MM-dd HH:mm:ss').parse(rawDateTime);
+      }
+
+      return DateFormat('EEEE, MMMM d').format(parsedDate);
+    } catch (e) {
+      print("Date parse error: $e | raw: $rawDateTime");
+      return 'Invalid date';
     }
-
-    return DateFormat('EEEE, MMMM d').format(parsedDate);
-  } catch (e) {
-    print("Date parse error: $e | raw: $rawDateTime");
-    return 'Invalid date';
   }
-}
- String _formatTime(String dateTimeStr) {
-  final dateTime = DateTime.parse(dateTimeStr);
-  return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-}
 
-String formatPrice(String priceStr) {
-  final doublePrice = double.tryParse(priceStr) ?? 0.0;
-  final intPrice = doublePrice.toInt();
+  String _formatTime(String dateTimeStr) {
+    final dateTime = DateTime.parse(dateTimeStr);
+    return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+  }
 
-  return 'IDR ${intPrice.toString().replaceAllMapped(
-    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-    (m) => '${m[1]}.',
-  )}';
-}
+  String formatPrice(String priceStr) {
+    final doublePrice = double.tryParse(priceStr) ?? 0.0;
+    final intPrice = doublePrice.toInt();
+
+    return 'IDR ${intPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+  }
 }

@@ -110,7 +110,7 @@ class _OrderState extends State<Order> with SingleTickerProviderStateMixin {
             for (var order in _allOrders) {
               if (order['status'] == 'confirmed') {
                 _historyOrders.add(order);
-              } else if (order['status'] == 'pending') {
+              } else if (order['status'] == 'active') {
                 _activeOrders.add(order);
               }
             }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -11,8 +10,12 @@ import 'package:terbangin/token_provider.dart';
 
 class Passenger extends StatefulWidget {
   final Map<String, dynamic> ticket;
-
-  const Passenger({super.key, required this.ticket});
+  final int passenger_num;
+  const Passenger({
+    super.key,
+    required this.ticket,
+    required this.passenger_num,
+  });
 
   @override
   _PassengerState createState() => _PassengerState();
@@ -22,75 +25,31 @@ class _PassengerState extends State<Passenger> {
   User? user;
   bool isLoading = true;
 
-  List<Map<String, dynamic>> passengers = List.generate(3, (_) => {
-        "title": "",
-        "fullName": "",
-        "birthDate": "",
-      });
+  List<Map<String, dynamic>> passengers = List.generate(
+    3,
+    (_) => {"title": "", "fullName": "", "birthDate": "", "nik_number": ""},
+  );
 
   @override
   void initState() {
     super.initState();
-    loadTokenAndProfile();
-  }
-
-  Future<void> loadTokenAndProfile() async {
     final token = Provider.of<TokenProvider>(context, listen: false).token;
-    if (token != null && token.isNotEmpty) {
-      await fetchProfile(token);
-    }
-  }
-
-  Future<void> fetchProfile(String token) async {
-    setState(() {
-      isLoading = true;
-    });
-    final url = Uri.parse('$baseUrl/user');
-    try {
-      final response = await http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final fetchedUser = User.fromJson(data);
-        setState(() {
-          user = fetchedUser;
-          // Set passenger[0] hanya dengan name
-          passengers[0]["fullName"] = fetchedUser.name;
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          user = null;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        user = null;
-        isLoading = false;
-      });
-    }
   }
 
   void _openPassengerForm(int index) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => PassengerForm(
-        initialData: passengers[index],
-        onSave: (data) {
-          setState(() {
-            passengers[index] = data;
-          });
-          Navigator.pop(context);
-        },
-      ),
+      builder:
+          (_) => PassengerForm(
+            initialData: passengers[index],
+            onSave: (data) {
+              setState(() {
+                passengers[index] = data;
+              });
+              Navigator.pop(context);
+            },
+          ),
     );
   }
 
@@ -135,19 +94,22 @@ class _PassengerState extends State<Passenger> {
             SizedBox(
               width: 351,
               child: ElevatedButton(
-                onPressed: () {
-                 print("aaleokfoawkod");
-                  print(widget.ticket);
-                  print(widget.ticket['user_id']);
+                onPressed: () async {
+                  // final success = await _savePassengerData();
+                  // if (success) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => Payment(
-                        ticket: widget.ticket,
-                        user_id: widget.ticket['user_id'],
-                      ),
+                      builder:
+                          (_) => Payment(
+                            ticket: widget.ticket,
+                            user_id: widget.ticket['user_id'],
+                            passengerList: passengers,
+                            passenger_num: widget.passenger_num,
+                          ),
                     ),
                   );
+                  // }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF006BFF),
@@ -160,7 +122,7 @@ class _PassengerState extends State<Passenger> {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -174,21 +136,29 @@ class _PassengerState extends State<Passenger> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          const Text("Passenger details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          const Text("All passenger data must be filled in*", style: TextStyle(color: Colors.red, fontSize: 13)),
+          const Text(
+            "Passenger details",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const Text(
+            "All passenger data must be filled in*",
+            style: TextStyle(color: Colors.red, fontSize: 13),
+          ),
           const SizedBox(height: 20),
-          ...List.generate(1, (i) {
+          ...List.generate(widget.passenger_num, (i) {
             return Card(
               margin: const EdgeInsets.only(bottom: 15),
               color: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: ListTile(
                 title: Text("Passenger ${i + 1}"),
-                subtitle: Text(
-                  passengers[i]["fullName"].isNotEmpty
-                      ? "${passengers[i]["title"]} ${passengers[i]["fullName"]} (${passengers[i]["birthDate"]})"
-                      : "Must be filled",
-                ),
+                // subtitle: Text(
+                //   passengers[i]["fullName"].isNotEmpty
+                //       ? "${passengers[i]["title"]} ${passengers[i]["fullName"]} (${passengers[i]["birthDate"]})"
+                //       : "Must be filled",
+                // ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () => _openPassengerForm(i),
               ),

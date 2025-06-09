@@ -13,7 +13,10 @@ class FlightFacility extends StatelessWidget {
         automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.white,
-        title: const Text("Flight Facilities", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          "Flight Facilities",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -25,19 +28,20 @@ class FlightFacility extends StatelessWidget {
           // Logo + Maskapai
           Row(
             children: [
-              Image.asset(
-                _getLogo(ticket['airline']),
-                width: 32,
-                height: 32,
-              ),
+              Image.asset(_getLogo(ticket['airline']), width: 32, height: 32),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(ticket['airline'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text("${ticket['flightCode']} · ${ticket['class']} · ${ticket['duration']}",
-                        style: const TextStyle(fontSize: 12)),
+                    Text(
+                      ticket['airline'],
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      "${ticket['flightCode']} · ${ticket['class']} · ${ticket['duration']}",
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -45,10 +49,15 @@ class FlightFacility extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          const Text("Ticket included", style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text(
+            "Ticket included",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
-          const Text("Cabin: 7 kg\nBagage: 20 kg",
-              style: TextStyle(fontSize: 14)),
+          const Text(
+            "Cabin: 7 kg\nBagage: 20 kg",
+            style: TextStyle(fontSize: 14),
+          ),
           const SizedBox(height: 4),
           const Text(
             "Availability depends on the airline.",
@@ -89,14 +98,14 @@ class FlightFacility extends StatelessWidget {
   }
 
   String _getLogo(String airline) {
-    if (airline.toLowerCase().contains('super')) {
-      return 'assets/super-air-jet.png';
-    } else if (airline.toLowerCase().contains('garuda')) {
+    if (airline.toLowerCase().contains('garuda')) {
       return 'assets/garuda-indonesia.png';
-    } else if (airline.toLowerCase().contains('lion')) {
-      return 'assets/lion-air.png';
     } else if (airline.toLowerCase().contains('citilink')) {
       return 'assets/citilink.png';
+    } else if (airline.toLowerCase().contains('airasia')) {
+      return 'assets/air-asia.png';
+    } else if (airline.toLowerCase().contains('lion')) {
+      return 'assets/lion-air.png';
     } else {
       return 'assets/default-airline.png';
     }

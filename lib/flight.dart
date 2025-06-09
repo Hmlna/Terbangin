@@ -10,7 +10,13 @@ import 'package:terbangin/token_provider.dart';
 class Flight extends StatefulWidget {
   final Map<String, dynamic> searchData;
   final int user_id;
-  const Flight({super.key, required this.searchData, required this.user_id});
+  final int passenger_num;
+  const Flight({
+    super.key,
+    required this.searchData,
+    required this.user_id,
+    required this.passenger_num,
+  });
 
   @override
   State<Flight> createState() => _FlightState();
@@ -48,7 +54,6 @@ class _FlightState extends State<Flight> {
           setState(() {
             flights = jsonData['data'];
             print(flights);
-            
           });
         }
       } else {
@@ -113,32 +118,37 @@ class _FlightState extends State<Flight> {
             ),
             SizedBox(height: 58),
             Expanded(
-              child: flights.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: flights.length,
-                      itemBuilder: (context, index) {
-                        final flight = flights[index];
-                        return _buildFlightCard(
-                          context: context,
-                          logoPath: getAirlineLogo(flight['airline_name']), // atau bisa sesuaikan berdasarkan airline_name
-                          airline: flight['airline_name'] ?? '',
-                          flightCode: flight['flight_number'] ?? '',
-                          from: flight['from'] ?? '',
-                          to: flight['destination'] ?? '',
-                          departure: (flight['departure']),
-                          arrival: (flight['arrival']),
-                          duration: _calculateDuration(flight['departure'], flight['arrival']),
-                          price: (flight['price']),
-                          user_id: (widget.user_id),
-                          flight_id: flight['flight_id'],
-                          
-                        );
-                      },
-                    ),
+              child:
+                  flights.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: flights.length,
+                        itemBuilder: (context, index) {
+                          final flight = flights[index];
+                          return _buildFlightCard(
+                            context: context,
+                            logoPath: getAirlineLogo(
+                              flight['airline_name'],
+                            ), // atau bisa sesuaikan berdasarkan airline_name
+                            airline: flight['airline_name'] ?? '',
+                            flightCode: flight['flight_number'] ?? '',
+                            from: flight['from'] ?? '',
+                            to: flight['destination'] ?? '',
+                            departure: (flight['departure']),
+                            arrival: (flight['arrival']),
+                            duration: _calculateDuration(
+                              flight['departure'],
+                              flight['arrival'],
+                            ),
+                            price: (flight['price']),
+                            user_id: (widget.user_id),
+                            flight_id: flight['flight_id'],
+                            passenger_num: widget.passenger_num,
+                          );
+                        },
+                      ),
             ),
-
           ],
         ),
       ),
@@ -146,42 +156,40 @@ class _FlightState extends State<Flight> {
   }
 
   String _formatTime(String dateTimeStr) {
-  final dateTime = DateTime.parse(dateTimeStr);
-  return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-}
-
-String formatPrice(String priceStr) {
-  final doublePrice = double.tryParse(priceStr) ?? 0.0;
-  final intPrice = doublePrice.toInt();
-
-  return 'IDR ${intPrice.toString().replaceAllMapped(
-    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-    (m) => '${m[1]}.',
-  )}';
-}
-
-String _calculateDuration(String departureStr, String arrivalStr) {
-  final departure = DateTime.parse(departureStr);
-  final arrival = DateTime.parse(arrivalStr);
-  final duration = arrival.difference(departure);
-
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes.remainder(60);
-  return '$hours hour${hours > 1 ? 's' : ''} $minutes minute${minutes != 1 ? 's' : ''}';
-}
-
-String getAirlineLogo(String airlineName) {
-  if (airlineName.toLowerCase().contains('garuda')) {
-    return 'assets/garuda-indonesia.png';
-  } else if (airlineName.toLowerCase().contains('citilink')) {
-    return 'assets/citilink.png';
-  } else if (airlineName.toLowerCase().contains('airasia')) {
-    return 'assets/air-asia.png';
-  } else {
-    return 'assets/lion-air.png';
+    final dateTime = DateTime.parse(dateTimeStr);
+    return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
   }
-}
 
+  String formatPrice(String priceStr) {
+    final doublePrice = double.tryParse(priceStr) ?? 0.0;
+    final intPrice = doublePrice.toInt();
+
+    return 'IDR ${intPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+  }
+
+  String _calculateDuration(String departureStr, String arrivalStr) {
+    final departure = DateTime.parse(departureStr);
+    final arrival = DateTime.parse(arrivalStr);
+    final duration = arrival.difference(departure);
+
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    return '$hours hour${hours > 1 ? 's' : ''} $minutes minute${minutes != 1 ? 's' : ''}';
+  }
+
+  String getAirlineLogo(String airlineName) {
+    if (airlineName.toLowerCase().contains('garuda')) {
+      return 'assets/garuda-indonesia.png';
+    } else if (airlineName.toLowerCase().contains('citilink')) {
+      return 'assets/citilink.png';
+    } else if (airlineName.toLowerCase().contains('airasia')) {
+      return 'assets/air-asia.png';
+    } else if (airlineName.toLowerCase().contains('lion')) {
+      return 'assets/lion-air.png';
+    } else {
+      return 'assets/default-airline.png';
+    }
+  }
 
   Widget _buildFlightCard({
     required BuildContext context,
@@ -195,7 +203,8 @@ String getAirlineLogo(String airlineName) {
     required String to,
     required String price,
     required int user_id,
-    required int flight_id
+    required int flight_id,
+    required int passenger_num,
   }) {
     return GestureDetector(
       onTap: () {
@@ -217,8 +226,9 @@ String getAirlineLogo(String airlineName) {
                     'class': 'Economy',
                     'price': price,
                     'user_id': user_id,
-                    'flight_id': flight_id
+                    'flight_id': flight_id,
                   },
+                  passenger_num: passenger_num,
                 ),
           ),
         );
@@ -249,7 +259,7 @@ String getAirlineLogo(String airlineName) {
                 ),
                 const Spacer(),
                 Text(
-                   _formatTime(arrival),
+                  _formatTime(arrival),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
@@ -261,7 +271,10 @@ String getAirlineLogo(String airlineName) {
                   children: [
                     Text(
                       from,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -285,7 +298,10 @@ String getAirlineLogo(String airlineName) {
                   children: [
                     Text(
                       to,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),

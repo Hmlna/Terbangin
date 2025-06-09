@@ -8,7 +8,8 @@ import 'package:terbangin/flight.dart';
 import 'package:terbangin/login.dart';
 import 'package:terbangin/models/UserModel.dart';
 import 'package:intl/intl.dart';
-import 'package:terbangin/token_provider.dart'; 
+import 'package:terbangin/token_provider.dart';
+
 class Home extends StatefulWidget {
   const Home({super.key});
 
@@ -19,22 +20,21 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   bool isLoading = true;
   String? name;
-
   User? user;
   List<String> fromCities = [];
   List<String> toCities = [];
   String? selectedFrom;
   String? selectedTo;
-  DateTime? selectedDate; // Store selected date
-  List<dynamic> flights = []; // Store full flight data
+  DateTime? selectedDate;
+  List<dynamic> flights = [];
+  int? passenger_num = 1; // Initialize passenger_num
 
   @override
   void initState() {
     super.initState();
-
     fetchFlightCities(1);
     loadTokenAndProfile();
-    selectedDate = DateTime.now(); // Default to current date
+    selectedDate = DateTime.now();
   }
 
   Future<void> loadTokenAndProfile() async {
@@ -88,9 +88,6 @@ class _HomeState extends State<Home> {
 
   Future<void> fetchFlightCities(action) async {
     final token = Provider.of<TokenProvider>(context, listen: false).token;
-
-    // final prefs = await SharedPreferences.getInstance();
-    // final token = prefs.getString('token');
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/flights'),
@@ -148,7 +145,6 @@ class _HomeState extends State<Home> {
       ..sort();
   }
 
-  // Date picker function
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -163,17 +159,17 @@ class _HomeState extends State<Home> {
     }
   }
 
-  // Generate JSON for search
   Map<String, dynamic> generateSearchJson() {
     String? formattedDate;
     if (selectedDate != null) {
       formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-      print('Formatted departure date: $formattedDate'); // Debug print
+      print('Formatted departure date: $formattedDate');
     }
     return {
       'from': selectedFrom,
       'destination': selectedTo,
       'departure': formattedDate,
+      'passengers': passenger_num, // Include passenger_num in search JSON
     };
   }
 
@@ -329,10 +325,18 @@ class _HomeState extends State<Home> {
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: _buildInputField(
+                                          child: _buildPassengerDropdownField(
                                             icon: Icons.people,
                                             title: "Passengers",
-                                            value: "3",
+                                            value: passenger_num?.toString(),
+                                            items: ['1', '2', '3'],
+                                            onChanged: (value) {
+                                              setState(() {
+                                                passenger_num = int.parse(
+                                                  value!,
+                                                );
+                                              });
+                                            },
                                           ),
                                         ),
                                         const SizedBox(width: 12),
@@ -353,19 +357,20 @@ class _HomeState extends State<Home> {
                                         onPressed: () {
                                           if (selectedFrom != null &&
                                               selectedTo != null &&
-                                              selectedDate != null) {
-                                            // Generate JSON
+                                              selectedDate != null &&
+                                              passenger_num != null) {
                                             final searchData =
                                                 generateSearchJson();
-                                            print(
-                                              jsonEncode(searchData),
-                                            ); // For debugging
+                                            print(jsonEncode(searchData));
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder:
                                                     (_) => Flight(
-                                                      searchData: searchData,user_id:user!.id,
+                                                      searchData: searchData,
+                                                      user_id: user!.id,
+                                                      passenger_num:
+                                                          passenger_num!,
                                                     ),
                                               ),
                                             );
@@ -375,13 +380,12 @@ class _HomeState extends State<Home> {
                                             ).showSnackBar(
                                               const SnackBar(
                                                 content: Text(
-                                                  "Please select From, To, and Departure date",
+                                                  "Please select From, To, Departure date, and Passengers",
                                                 ),
                                               ),
                                             );
                                           }
                                         },
-
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(
                                             0xFF006BFF,
@@ -528,6 +532,92 @@ class _HomeState extends State<Home> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPassengerDropdownField({
+    required IconData icon,
+    required String title,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade100,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+                DropdownButton<String>(
+                  value: value,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  hint: const Text(
+                    "Select Passengers",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  dropdownColor: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  items:
+                      items.map((String number) {
+                        return DropdownMenuItem<String>(
+                          value: number,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              number,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                  onChanged: onChanged,
+                  menuMaxHeight: 300,
+                  style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                  selectedItemBuilder: (BuildContext context) {
+                    return items.map((String number) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 10.0),
+                        child: Text(
+                          number,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                      );
+                    }).toList();
+                  },
+                  itemHeight: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
